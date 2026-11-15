@@ -8,6 +8,11 @@ spring:
           discovery:
             locator:
               enabled: false
+          # Forward the client's Host (e.g. localhost:8080) to the services, so
+          # links they build (Location header) point to the gateway, not to the
+          # container. Safer than trusting X-Forwarded-* headers from clients.
+          default-filters:
+            - PreserveHostHeader
           routes:
             - id: customer-service
               uri: lb://customer-service
