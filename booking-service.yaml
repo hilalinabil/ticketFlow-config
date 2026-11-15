@@ -1,0 +1,34 @@
+server:
+  port: 8083
+  # Build links (Location header) from the Host forwarded by the gateway.
+  forward-headers-strategy: framework
+spring:
+  datasource:
+    # DB_HOST: "mysql" in docker compose, localhost otherwise.
+    # Credentials come ONLY from the environment (root .env), never from this repo.
+    url: jdbc:mysql://${DB_HOST:localhost}:3306/booking_db
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+  cloud:
+    openfeign:
+      client:
+        config:
+          # Fail fast: a dependency that is down or too slow gives a 503 in ~3 s.
+          # No automatic retry (Feign's default Retryer.NEVER_RETRY is kept, and
+          # spring-retry is not on the classpath): a POST reservation must never
+          # be sent twice.
+          event-service:
+            connect-timeout: 2000
+            read-timeout: 3000
+          customer-service:
+            connect-timeout: 2000
+            read-timeout: 3000
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
