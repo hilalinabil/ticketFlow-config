@@ -1,5 +1,17 @@
 server:
   port: 8081
+spring:
+  datasource:
+    # DB_HOST: "mysql" in docker compose, localhost otherwise.
+    # Credentials come ONLY from the environment (root .env), never from this repo.
+    url: jdbc:mysql://${DB_HOST:localhost}:3306/customer_db
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Overrides the local create-drop: keep the schema and data across restarts.
+      ddl-auto: update
 management:
   endpoints:
     web:

@@ -1,6 +1,8 @@
+# Shared by every config client. Hosts use placeholders with localhost defaults:
+# outside Docker nothing is set; docker compose sets EUREKA_URL.
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
   instance:
     prefer-ip-address: true
