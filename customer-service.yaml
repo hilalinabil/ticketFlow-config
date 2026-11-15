@@ -1,5 +1,8 @@
 server:
   port: 8081
+  # Trust X-Forwarded-* headers set by the api-gateway so generated links
+  # (e.g. the Location header) use the gateway's public host:port.
+  forward-headers-strategy: framework
 spring:
   datasource:
     # DB_HOST: "mysql" in docker compose, localhost otherwise.
