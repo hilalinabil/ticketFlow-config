@@ -6,3 +6,9 @@ eureka:
       defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
   instance:
     prefer-ip-address: true
+spring:
+  kafka:
+    # Outside Docker: the broker's host listener (127.0.0.1:9094).
+    # docker compose sets KAFKA_BOOTSTRAP_SERVERS=kafka:9092 (internal listener).
+    # No service uses Kafka yet: this only takes effect once spring-kafka is added.
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
