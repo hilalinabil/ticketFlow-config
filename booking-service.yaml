@@ -27,8 +27,64 @@ spring:
           customer-service:
             connect-timeout: 2000
             read-timeout: 3000
+      # Every Feign call goes through a Resilience4j circuit breaker (no Feign
+      # fallback: a dependency that is down gives a 503, never a fake success).
+      circuitbreaker:
+        enabled: true
+        group:
+          enabled: true
+# ONE breaker per Feign client. The names are the Feign client names: the app's
+# FeignCircuitBreakerConfig makes the breaker id = client name (group mode alone
+# still creates one breaker per METHOD, e.g. "EventClientgetEventLong").
+# Check: GET /actuator/circuitbreakers on booking-service (internal port 8083).
+resilience4j:
+  circuitbreaker:
+    configs:
+      remote-service:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        # Only technical failures count: connection refused / timeouts
+        # (RetryableException), 5xx and "no instance" (ServiceUnavailableException,
+        # from FeignErrorDecoder), time limiter timeouts.
+        record-exceptions:
+          - feign.RetryableException
+          - com.ticketflow.bookingservice.exception.ServiceUnavailableException
+          - java.util.concurrent.TimeoutException
+        # Business answers never open the circuit (unknown event, DRAFT event,
+        # not enough seats): neither failure nor success.
+        ignore-exceptions:
+          - com.ticketflow.bookingservice.exception.RemoteNotFoundException
+          - com.ticketflow.bookingservice.exception.RemoteConflictException
+          - feign.FeignException$NotFound
+          - feign.FeignException$BadRequest
+          - jakarta.validation.ValidationException
+    instances:
+      event-service:
+        base-config: remote-service
+      customer-service:
+        base-config: remote-service
+  timelimiter:
+    configs:
+      remote-service:
+        # Above Feign's read-timeout (3000 ms): Feign's own timeout fires first.
+        timeout-duration: 4s
+    instances:
+      event-service:
+        base-config: remote-service
+      customer-service:
+        base-config: remote-service
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        # booking-service's port is not published and the gateway routes only
+        # /api/bookings/**: these endpoints are internal (docker compose exec).
+        include: health,info,circuitbreakers,circuitbreakerevents
+  endpoint:
+    health:
+      # Shows components.circuitBreakers (state per dependency).
+      show-details: always
