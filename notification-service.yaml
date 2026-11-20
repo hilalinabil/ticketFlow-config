@@ -1,0 +1,21 @@
+server:
+  port: 8084
+spring:
+  # Consumer of ticketflow.booking.created (bootstrap-servers: application.yaml).
+  # Group id and concurrency are on the @KafkaListener (notification-service, 3).
+  kafka:
+    consumer:
+      client-id: notification-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      # First start of the group: read what was published before it existed.
+      auto-offset-reset: earliest
+ticketflow:
+  kafka:
+    topics:
+      booking-created: ticketflow.booking.created
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

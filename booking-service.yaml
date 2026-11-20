@@ -13,6 +13,22 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: update
+  # Producer of ticketflow.booking.created (bootstrap-servers: application.yaml).
+  # Best effort: a broker outage must not fail a booking, so never wait long.
+  kafka:
+    producer:
+      client-id: booking-service
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        # send() blocks at most 2 s for metadata when the broker is down
+        # (default 60 s would hold the HTTP request), then fails: logged.
+        max.block.ms: 2000
+        request.timeout.ms: 5000
+        # Give up an unacknowledged record after 10 s (>= linger + request timeout).
+        delivery.timeout.ms: 10000
   cloud:
     openfeign:
       client:
@@ -33,6 +49,10 @@ spring:
         enabled: true
         group:
           enabled: true
+ticketflow:
+  kafka:
+    topics:
+      booking-created: ticketflow.booking.created
 # ONE breaker per Feign client. The names are the Feign client names: the app's
 # FeignCircuitBreakerConfig makes the breaker id = client name (group mode alone
 # still creates one breaker per METHOD, e.g. "EventClientgetEventLong").
